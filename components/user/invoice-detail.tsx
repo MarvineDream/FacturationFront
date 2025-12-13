@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { invoiceApi, type Invoice } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -8,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, Download, FileText } from "lucide-react"
+import { ArrowLeft, Download, Printer } from "lucide-react"
 
 interface InvoiceDetailProps {
   invoiceId: string
@@ -26,16 +27,26 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
 
   const loadInvoice = async () => {
     setLoading(true)
-    const response = await invoiceApi.getById(invoiceId)
-    if (response.success && response.data) {
-      setInvoice(response.data)
-    } else {
+
+    try {
+      const response = await invoiceApi.getById(invoiceId)
+      if (response.success && response.data) {
+        setInvoice(response.data)
+      } else {
+        toast({
+          title: "Erreur",
+          description: response.error || "Impossible de charger la facture",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
       toast({
         title: "Erreur",
-        description: response.error || "Impossible de charger la facture",
+        description: "Impossible de charger la facture",
         variant: "destructive",
       })
     }
+
     setLoading(false)
   }
 
@@ -66,6 +77,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
     }
   }
 
+  /*  LOADING  */
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -74,66 +86,104 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
     )
   }
 
+  /*  NOT FOUND  */
   if (!invoice) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Facture introuvable</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6">
+        <div className="relative w-40 h-40">
+          <Image src="/logo.png" alt="Logo entreprise" fill className="object-contain" />
+        </div>
+        <p className="text-muted-foreground text-lg">Facture introuvable</p>
+        <Button onClick={() => router.push("/dashboard")}>Retour au tableau de bord</Button>
       </div>
     )
   }
 
+  /*  MAIN VIEW  */
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
+      {/* HEADER (non imprimé) */}
+      <header className="border-b bg-card no-print">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-              <FileText className="h-5 w-5 text-primary-foreground" />
+
+            <div className="h-10 w-auto flex items-center">
+              <Image src="/logo.png" alt="Bamboo Assur Logo" width={120} height={40} priority />
             </div>
+
             <div>
               <h1 className="text-xl font-bold">Facture {invoice.invoiceNumber}</h1>
               <p className="text-sm text-muted-foreground">Détails de la facture</p>
             </div>
           </div>
-          <Button onClick={handleDownloadPdf}>
-            <Download className="h-4 w-4 mr-2" />
-            Télécharger PDF
-          </Button>
+
+          <div className="flex items-center gap-3">
+            {/* BOUTON IMPRIMER */}
+            <Button variant="outline" className="no-print" onClick={() => window.print()}>
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimer
+            </Button>
+
+            {/* BOUTON TELECHARGER PDF */}
+            <Button onClick={handleDownloadPdf} className="no-print">
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger PDF
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 max-w-4xl space-y-6">
+      {/* MAIN CONTENT - imprimable */}
+      <main className="print-container container mx-auto px-4 py-8 max-w-4xl space-y-6">
+
         {/* Invoice Info */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Informations générales</CardTitle>
               <Badge
-                variant={invoice.status === "paid" ? "default" : invoice.status === "sent" ? "secondary" : "outline"}
+                variant={
+                  invoice.status === "paid"
+                    ? "default"
+                    : invoice.status === "sent"
+                    ? "secondary"
+                    : "outline"
+                }
               >
-                {invoice.status === "paid" ? "Payée" : invoice.status === "sent" ? "Envoyée" : "Brouillon"}
+                {invoice.status === "paid"
+                  ? "Payée"
+                  : invoice.status === "sent"
+                  ? "Envoyée"
+                  : "Brouillon"}
               </Badge>
             </div>
           </CardHeader>
+
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-muted-foreground">Client</p>
               <p className="font-medium">{invoice.client?.name || "N/A"}</p>
-              {invoice.client?.email && <p className="text-sm text-muted-foreground">{invoice.client.email}</p>}
+              {invoice.client?.email && (
+                <p className="text-sm text-muted-foreground">{invoice.client.email}</p>
+              )}
             </div>
+
             <div>
               <p className="text-sm text-muted-foreground">Date d'émission</p>
-              <p className="font-medium">{new Date(invoice.issueDate).toLocaleDateString("fr-FR")}</p>
+              <p className="font-medium">
+                {new Date(invoice.issueDate).toLocaleDateString("fr-FR")}
+              </p>
             </div>
+
             {invoice.dueDate && (
               <div>
                 <p className="text-sm text-muted-foreground">Date d'échéance</p>
-                <p className="font-medium">{new Date(invoice.dueDate).toLocaleDateString("fr-FR")}</p>
+                <p className="font-medium">
+                  {new Date(invoice.dueDate).toLocaleDateString("fr-FR")}
+                </p>
               </div>
             )}
           </CardContent>
@@ -154,6 +204,7 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
                   <TableHead className="text-right">Total</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {invoice.items.map((item, index) => (
                   <TableRow key={index}>
@@ -173,10 +224,14 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
                   <span className="text-muted-foreground">Sous-total HT:</span>
                   <span className="font-medium">{invoice.subtotal.toFixed(2)} Fcfa</span>
                 </div>
+
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">TVA ({invoice.taxRate}%):</span>
+                  <span className="text-muted-foreground">
+                    TVA ({invoice.taxRate}%):
+                  </span>
                   <span className="font-medium">{invoice.taxAmount.toFixed(2)} Fcfa</span>
                 </div>
+
                 <div className="flex justify-between text-lg font-bold border-t pt-2">
                   <span>Total TTC:</span>
                   <span>{invoice.total.toFixed(2)} Fcfa</span>

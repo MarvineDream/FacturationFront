@@ -203,24 +203,55 @@ export function InvoiceList() {
                       {invoice.status === "paid" ? "Payée" : invoice.status === "sent" ? "Envoyée" : "Brouillon"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(`/dashboard/invoice/${invoice.id}`)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownloadPdf(invoice.id, invoice.invoiceNumber)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
+ <TableCell className="text-right">
+  <div className="flex justify-end gap-2">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => router.push(`/dashboard/invoice/${invoice.id}`)}
+    >
+      <Eye className="h-4 w-4" />
+    </Button>
+
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => handleDownloadPdf(invoice.id, invoice.invoiceNumber)}
+    >
+      <Download className="h-4 w-4" />
+    </Button>
+
+    {/* 🔄 Bouton modifier statut (uniquement draft <-> paid) */}
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={async () => {
+        const nextStatus = invoice.status === "draft" ? "paid" : "draft";
+
+        const res = await invoiceApi.updateStatus(invoice.id, nextStatus);
+
+        if (res.success) {
+          toast({
+            title: "Statut mis à jour",
+            description: `La facture est maintenant : ${nextStatus}`,
+          });
+          loadInvoices();
+        } else {
+          toast({
+            title: "Erreur",
+            description: "Impossible de changer le statut",
+            variant: "destructive",
+          });
+        }
+      }}
+    >
+      {invoice.status === "draft" && "Marquer payée"}
+      {invoice.status === "paid" && "Remettre brouillon"}
+    </Button>
+  </div>
+</TableCell>
+
+
                 </TableRow>
               ))
             )}

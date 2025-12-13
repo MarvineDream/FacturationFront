@@ -8,11 +8,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast"
 import { UserPlus, Trash2, Edit } from "lucide-react"
 import { CreateClientDialog } from "./create-client-dialog"
+import { EditClientDialog } from "./client-edit-dialog"
 
 export function ClientManagement() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
+
+  // Nouveaux états pour l’édition
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null)
+
   const { toast } = useToast()
 
   const loadClients = async () => {
@@ -35,9 +41,7 @@ export function ClientManagement() {
   }, [])
 
   const handleDeleteClient = async (clientId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) {
-      return
-    }
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce client ?")) return
 
     const response = await clientApi.delete(clientId)
     if (response.success) {
@@ -55,16 +59,9 @@ export function ClientManagement() {
     }
   }
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="py-8">
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    )
+  const handleEditClick = (client: Client) => {
+    setClientToEdit(client)
+    setShowEditDialog(true)
   }
 
   return (
@@ -82,6 +79,7 @@ export function ClientManagement() {
             </Button>
           </div>
         </CardHeader>
+
         <CardContent>
           <Table>
             <TableHeader>
@@ -93,6 +91,7 @@ export function ClientManagement() {
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
               {clients.length === 0 ? (
                 <TableRow>
@@ -109,7 +108,7 @@ export function ClientManagement() {
                     <TableCell>{client.address || "-"}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(client)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button variant="destructive" size="sm" onClick={() => handleDeleteClient(client.id)}>
@@ -126,6 +125,13 @@ export function ClientManagement() {
       </Card>
 
       <CreateClientDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} onSuccess={loadClients} />
+
+      <EditClientDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        client={clientToEdit}
+        onSuccess={loadClients}
+      />
     </>
   )
 }

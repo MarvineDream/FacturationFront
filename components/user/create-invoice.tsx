@@ -166,7 +166,7 @@ export function CreateInvoice() {
           </Button>
 
           <div className="flex items-center gap-3">
-            {/* 🔥 LOGO ENTREPRISE */}
+            {/* LOGO ENTREPRISE */}
             <div className="h-10 w-auto flex items-center">
                           <Image
                             src="/logo.png"
@@ -215,7 +215,7 @@ export function CreateInvoice() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="taxRate">Taux de TVA (%)</Label>
+                  <Label htmlFor="taxRate">Taxe (%)</Label>
                   <Input
                     id="taxRate"
                     type="number"
@@ -349,7 +349,7 @@ export function CreateInvoice() {
                       <span className="font-medium">{subtotal.toFixed(2)} Fcfa</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">TVA ({taxRate}%):</span>
+                      <span className="text-muted-foreground">TAXE ({taxRate}%):</span>
                       <span className="font-medium">{taxAmount.toFixed(2)} Fcfa</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold border-t pt-2">

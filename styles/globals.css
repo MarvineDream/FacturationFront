@@ -123,3 +123,65 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+/* ------------------------- */
+/*       PRINT STYLES        */
+/* ------------------------- */
+@media print {
+
+  /* Cacher header, boutons et tout ce qui porte la classe no-print */
+  header,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Zone imprimable sans marges parasites */
+  .print-container {
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  /* Texte plus lisible en impression */
+  h1, h2, h3, h4, h5, h6 {
+    color: #000 !important;
+  }
+
+  p, span, td, th {
+    color: #000 !important;
+    font-size: 13px !important;
+  }
+
+  /* Tables propres en impression */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: avoid !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 6px !important;
+  }
+
+  /* Marges de la page */
+  @page {
+    margin: 12mm;
+  }
+
+  /* Logo imprimé proprement */
+  img {
+    max-width: 200px !important;
+  }
+}
+

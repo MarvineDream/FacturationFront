@@ -1,6 +1,6 @@
 // API configuration and helper functions for connecting to Express backend
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
 
 interface ApiResponse<T = any> {
   success: boolean
@@ -182,7 +182,7 @@ export const invoiceApi = {
   },
 
   update: async (id: string, invoiceData: Partial<Invoice>) => {
-    return fetchApi<Invoice>(`/fatures/${id}`, {
+    return fetchApi<Invoice>(`/factures/${id}`, {
       method: "PUT",
       body: JSON.stringify(invoiceData),
     })
@@ -191,6 +191,14 @@ export const invoiceApi = {
   delete: async (id: string) => {
     return fetchApi(`/factures/${id}`, {
       method: "DELETE",
+    })
+  },
+
+  // changement de statut
+  updateStatus: async (id: string, status: "draft" | "sent" | "paid") => {
+    return fetchApi<Invoice>(`/factures/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
     })
   },
 
@@ -204,6 +212,7 @@ export const invoiceApi = {
     return response.blob()
   },
 }
+
 
 // Types
 export interface User {
