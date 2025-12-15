@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { userApi } from "@/lib/api"
 import { Button } from "@/components/ui/button"
@@ -15,7 +14,13 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 
 interface CreateUserDialogProps {
@@ -24,7 +29,11 @@ interface CreateUserDialogProps {
   onSuccess: () => void
 }
 
-export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDialogProps) {
+export function CreateUserDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CreateUserDialogProps) {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -48,6 +57,7 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
         title: "Succès",
         description: "Utilisateur créé avec succès",
       })
+
       setName("")
       setEmail("")
       setPassword("")
@@ -67,19 +77,31 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="w-full max-w-md">
+        {/* ========== HEADER ========== */}
         <DialogHeader>
-          <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
-          <DialogDescription>Ajoutez un nouvel utilisateur au système de facturation</DialogDescription>
+          <DialogTitle>Nouvel utilisateur</DialogTitle>
+          <DialogDescription>
+            Créez un compte utilisateur pour accéder au système
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
+
+        {/* ========== FORM ========== */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
               <Label htmlFor="name">Nom complet</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required disabled={loading} />
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                disabled={loading}
+              />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Adresse email</Label>
               <Input
                 id="email"
                 type="email"
@@ -89,7 +111,8 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
                 disabled={loading}
               />
             </div>
-            <div className="space-y-2">
+
+            <div className="space-y-1.5">
               <Label htmlFor="password">Mot de passe</Label>
               <Input
                 id="password"
@@ -100,25 +123,44 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
                 disabled={loading}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
-              <Select value={role} onValueChange={(value: "user" | "admin") => setRole(value)}>
+
+            <div className="space-y-1.5">
+              <Label>Rôle</Label>
+              <Select
+                value={role}
+                onValueChange={(value: "user" | "admin") =>
+                  setRole(value)
+                }
+                disabled={loading}
+              >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Sélectionner un rôle" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Utilisateur</SelectItem>
-                  <SelectItem value="admin">Administrateur</SelectItem>
+                  <SelectItem value="user">
+                    Utilisateur
+                  </SelectItem>
+                  <SelectItem value="admin">
+                    Administrateur
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+
+          {/* ========== FOOTER ========== */}
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               Annuler
             </Button>
+
             <Button type="submit" disabled={loading}>
-              {loading ? "Création..." : "Créer"}
+              {loading ? "Création..." : "Créer l’utilisateur"}
             </Button>
           </DialogFooter>
         </form>

@@ -104,37 +104,66 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
     <div className="min-h-screen bg-background">
       {/* HEADER (non imprimé) */}
       <header className="border-b bg-card no-print">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+  <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
 
-            <div className="h-10 w-auto flex items-center">
-              <Image src="/logo.png" alt="Bamboo Assur Logo" width={120} height={40} priority />
-            </div>
+    {/* LEFT SIDE */}
+    <div className="flex items-center gap-4 min-w-0">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => router.push("/dashboard")}
+        className="shrink-0"
+      >
+        <ArrowLeft className="h-5 w-5" />
+      </Button>
 
-            <div>
-              <h1 className="text-xl font-bold">Facture {invoice.invoiceNumber}</h1>
-              <p className="text-sm text-muted-foreground">Détails de la facture</p>
-            </div>
-          </div>
+      <div className="h-10 w-auto flex items-center shrink-0">
+        <Image
+          src="/logo.png"
+          alt="Bamboo Assur Logo"
+          width={120}
+          height={40}
+          priority
+        />
+      </div>
 
-          <div className="flex items-center gap-3">
-            {/* BOUTON IMPRIMER */}
-            <Button variant="outline" className="no-print" onClick={() => window.print()}>
-              <Printer className="h-4 w-4 mr-2" />
-              Imprimer
-            </Button>
+      <div className="min-w-0">
+        <h1 className="text-xl font-bold truncate">
+          Facture {invoice.invoiceNumber}
+        </h1>
+        <p className="text-sm text-muted-foreground truncate">
+          Détails de la facture
+        </p>
+      </div>
+    </div>
 
-            {/* BOUTON TELECHARGER PDF */}
-            <Button onClick={handleDownloadPdf} className="no-print">
-              <Download className="h-4 w-4 mr-2" />
-              Télécharger PDF
-            </Button>
-          </div>
-        </div>
-      </header>
+    {/* ACTION BUTTONS */}
+    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+      <Button
+        variant="outline"
+        size="lg"
+        className="w-full md:w-auto h-12"
+        onClick={() => window.print()}
+      >
+        <Printer className="h-4 w-4 md:mr-2" />
+        <span className="hidden md:inline">Imprimer</span>
+      </Button>
+
+      <Button
+        size="lg"
+        className="w-full md:w-auto h-12"
+        onClick={handleDownloadPdf}
+      >
+        <Download className="h-4 w-4 md:mr-2" />
+        <span className="hidden md:inline">Télécharger PDF</span>
+      </Button>
+    </div>
+
+  </div>
+</header>
+
+
+
 
       {/* MAIN CONTENT - imprimable */}
       <main className="print-container container mx-auto px-4 py-8 max-w-4xl space-y-6">

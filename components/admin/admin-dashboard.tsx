@@ -16,12 +16,13 @@ export function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* ================= HEADER ================= */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Nouveau logo */}
-            <div className="h-10 w-auto flex items-center">
+          
+          {/* LEFT : Logo + Title */}
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-auto flex items-center shrink-0">
               <Image
                 src="/logo.png"
                 alt="Bamboo Assur Logo"
@@ -31,33 +32,51 @@ export function AdminDashboard() {
               />
             </div>
 
-            <div>
-              <h1 className="text-xl font-bold">Tableau de bord Admin</h1>
-              <p className="text-sm text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold truncate">
+                Tableau de bord Admin
+              </h1>
+              <p className="text-sm text-muted-foreground truncate">
                 Bienvenue, {user?.name}
               </p>
             </div>
           </div>
 
-          <Button variant="outline" onClick={logout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Déconnexion
-          </Button>
+          {/* RIGHT : Action */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="px-3"
+              onClick={logout}
+            >
+              <LogOut className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">
+                Déconnexion
+              </span>
+            </Button>
+          </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* ================= MAIN ================= */}
       <main className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Utilisateurs
             </TabsTrigger>
+
             <TabsTrigger value="invoices" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Factures
             </TabsTrigger>
+
             <TabsTrigger value="settings" className="flex items-center gap-2">
               <SettingsIcon className="h-4 w-4" />
               Paramètres

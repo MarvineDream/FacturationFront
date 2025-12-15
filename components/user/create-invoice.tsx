@@ -1,21 +1,46 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { useAuth } from "@/contexts/auth-context"
-import { clientApi, productApi, invoiceApi, type Client, type Product, type InvoiceItem } from "@/lib/api"
+import {
+  clientApi,
+  productApi,
+  invoiceApi,
+  type Client,
+  type Product,
+  type InvoiceItem,
+} from "@/lib/api"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Plus, Trash2 } from "lucide-react"
-import Image from "next/image"
 
 export function CreateInvoice() {
   const { user } = useAuth()
@@ -25,7 +50,9 @@ export function CreateInvoice() {
   const [clients, setClients] = useState<Client[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [selectedClientId, setSelectedClientId] = useState("")
-  const [issueDate, setIssueDate] = useState(new Date().toISOString().split("T")[0])
+  const [issueDate, setIssueDate] = useState(
+    new Date().toISOString().split("T")[0]
+  )
   const [dueDate, setDueDate] = useState("")
   const [notes, setNotes] = useState("")
   const [items, setItems] = useState<InvoiceItem[]>([])
@@ -37,98 +64,93 @@ export function CreateInvoice() {
   }, [])
 
   const loadData = async () => {
-    const [clientsRes, productsRes] = await Promise.all([clientApi.getAll(), productApi.getAll()])
+    const [clientsRes, productsRes] = await Promise.all([
+      clientApi.getAll(),
+      productApi.getAll(),
+    ])
 
-    if (clientsRes.success && clientsRes.data) {
-      setClients(clientsRes.data)
-    }
-    if (productsRes.success && productsRes.data) {
-      setProducts(productsRes.data)
-    }
+    if (clientsRes.success && clientsRes.data) setClients(clientsRes.data)
+    if (productsRes.success && productsRes.data) setProducts(productsRes.data)
   }
 
   const addItem = () => {
     if (products.length === 0) {
       toast({
-        title: "Attention",
-        description: "Veuillez d'abord créer des produits",
+        title: "Aucun produit",
+        description: "Veuillez d'abord créer un produit.",
         variant: "destructive",
       })
       return
     }
 
-    const firstProduct = products[0]
-    setItems([
-      ...items,
+    const p = products[0]
+    setItems((prev) => [
+      ...prev,
       {
-        productId: firstProduct.id,
-        productName: firstProduct.name,
+        productId: p.id,
+        productName: p.name,
         quantity: 1,
-        unitPrice: firstProduct.price,
-        total: firstProduct.price,
+        unitPrice: p.price,
+        total: p.price,
       },
     ])
   }
 
   const removeItem = (index: number) => {
-    setItems(items.filter((_, i) => i !== index))
+    setItems((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
-    const newItems = [...items]
-    newItems[index] = { ...newItems[index], [field]: value }
+  const updateItem = (
+    index: number,
+    field: keyof InvoiceItem,
+    value: any
+  ) => {
+    const updated = [...items]
+    updated[index] = { ...updated[index], [field]: value }
 
     if (field === "productId") {
       const product = products.find((p) => p.id === value)
       if (product) {
-        newItems[index].productName = product.name
-        newItems[index].unitPrice = product.price
-        newItems[index].total = product.price * newItems[index].quantity
+        updated[index].productName = product.name
+        updated[index].unitPrice = product.price
+        updated[index].total = product.price * updated[index].quantity
       }
-    } else if (field === "quantity" || field === "unitPrice") {
-      newItems[index].total = newItems[index].quantity * newItems[index].unitPrice
     }
 
-    setItems(newItems)
+    if (field === "quantity" || field === "unitPrice") {
+      updated[index].total =
+        updated[index].quantity * updated[index].unitPrice
+    }
+
+    setItems(updated)
   }
 
   const calculateTotals = () => {
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0)
-    const taxAmount = (subtotal * Number.parseFloat(taxRate)) / 100
-    const total = subtotal + taxAmount
-    return { subtotal, taxAmount, total }
+    const subtotal = items.reduce((s, i) => s + i.total, 0)
+    const taxAmount = (subtotal * Number(taxRate)) / 100
+    return { subtotal, taxAmount, total: subtotal + taxAmount }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedClientId) {
+    if (!selectedClientId || items.length === 0) {
       toast({
-        title: "Erreur",
-        description: "Veuillez sélectionner un client",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (items.length === 0) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez ajouter au moins un article",
+        title: "Formulaire incomplet",
+        description: "Veuillez sélectionner un client et ajouter au moins un article.",
         variant: "destructive",
       })
       return
     }
 
     setLoading(true)
-
     const { subtotal, taxAmount, total } = calculateTotals()
 
     const response = await invoiceApi.create({
       clientId: selectedClientId,
       items,
       subtotal,
-      taxRate: Number.parseFloat(taxRate),
+      taxRate: Number(taxRate),
       taxAmount,
       total,
       issueDate,
@@ -137,199 +159,169 @@ export function CreateInvoice() {
       status: "draft",
     })
 
+    setLoading(false)
+
     if (response.success) {
-      toast({
-        title: "Succès",
-        description: "Facture créée avec succès",
-      })
+      toast({ title: "Facture créée avec succès" })
       router.push("/dashboard")
     } else {
       toast({
         title: "Erreur",
-        description: response.error || "Impossible de créer la facture",
+        description: response.error,
         variant: "destructive",
       })
     }
-
-    setLoading(false)
   }
 
   const { subtotal, taxAmount, total } = calculateTotals()
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* HEADER */}
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.push("/dashboard")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
 
-          <div className="flex items-center gap-3">
-            {/* LOGO ENTREPRISE */}
-            <div className="h-10 w-auto flex items-center">
-                          <Image
-                            src="/logo.png"
-                            alt="Bamboo Assur Logo"
-                            width={120}
-                            height={40}
-                            priority
-                          />
-                        </div>
+          <Image src="/logo.png" alt="Logo" width={120} height={40} />
 
-            <div>
-              <h1 className="text-xl font-bold">Nouvelle facture</h1>
-              <p className="text-sm text-muted-foreground">
-                Créez une nouvelle facture pour vos clients
-              </p>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold">Nouvelle facture</h1>
+            <p className="text-sm text-muted-foreground">
+              Création d'une facture client
+            </p>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* CONTENT */}
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Client and Date Information */}
+          {/* INFOS */}
           <Card>
             <CardHeader>
               <CardTitle>Informations générales</CardTitle>
-              <CardDescription>Sélectionnez le client et les dates</CardDescription>
+              <CardDescription>Client, dates et taxe</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client">Client</Label>
-                  <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Client</Label>
+                <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un client" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="taxRate">Taxe (%)</Label>
-                  <Input
-                    id="taxRate"
-                    type="number"
-                    step="0.01"
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(e.target.value)}
-                  />
-                </div>
+              <div>
+                <Label>Taxe (%)</Label>
+                <Input
+                  type="number"
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(e.target.value)}
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="issueDate">Date d'émission</Label>
-                  <Input
-                    id="issueDate"
-                    type="date"
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    required
-                  />
-                </div>
+              <div>
+                <Label>Date d’émission</Label>
+                <Input type="date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} />
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dueDate">Date d'échéance (optionnel)</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                  />
-                </div>
+              <div>
+                <Label>Date d’échéance</Label>
+                <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
               </div>
             </CardContent>
           </Card>
 
-          {/* Invoice Items */}
+          {/* ARTICLES */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Articles</CardTitle>
-                  <CardDescription>Ajoutez les produits ou services à facturer</CardDescription>
-                </div>
-                <Button type="button" onClick={addItem}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Ajouter un article
-                </Button>
+            <CardHeader className="flex flex-row justify-between items-center">
+              <div>
+                <CardTitle>Articles</CardTitle>
+                <CardDescription>Produits et services facturés</CardDescription>
               </div>
+              <Button type="button" variant="outline" size="sm" onClick={addItem}>
+                <Plus className="h-4 w-4 mr-2" />
+                Ajouter
+              </Button>
             </CardHeader>
+
             <CardContent>
-              {items.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Aucun article ajouté. Cliquez sur "Ajouter un article" pour commencer.
-                </div>
-              ) : (
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Produit/Service</TableHead>
-                      <TableHead>Quantité</TableHead>
-                      <TableHead>Prix unitaire</TableHead>
+                      <TableHead>Produit</TableHead>
+                      <TableHead>Qté</TableHead>
+                      <TableHead>Prix</TableHead>
                       <TableHead>Total</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
+                      <TableHead />
                     </TableRow>
                   </TableHeader>
+
                   <TableBody>
-                    {items.map((item, index) => (
-                      <TableRow key={index}>
+                    {items.map((item, i) => (
+                      <TableRow key={i}>
                         <TableCell>
                           <Select
                             value={item.productId}
-                            onValueChange={(value) => updateItem(index, "productId", value)}
+                            onValueChange={(v) => updateItem(i, "productId", v)}
                           >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              {products.map((product) => (
-                                <SelectItem key={product.id} value={product.id}>
-                                  {product.name}
+                              {products.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </TableCell>
+
                         <TableCell>
                           <Input
                             type="number"
                             min="1"
                             value={item.quantity}
                             onChange={(e) =>
-                              updateItem(index, "quantity", Number.parseInt(e.target.value))
+                              updateItem(i, "quantity", Number(e.target.value))
                             }
                             className="w-20"
                           />
                         </TableCell>
+
                         <TableCell>
                           <Input
                             type="number"
-                            step="0.01"
                             value={item.unitPrice}
                             onChange={(e) =>
-                              updateItem(index, "unitPrice", Number.parseFloat(e.target.value))
+                              updateItem(i, "unitPrice", Number(e.target.value))
                             }
                             className="w-28"
                           />
                         </TableCell>
+
                         <TableCell className="font-medium">
                           {item.total.toFixed(2)} Fcfa
                         </TableCell>
+
                         <TableCell>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeItem(index)}
+                            onClick={() => removeItem(i)}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -338,48 +330,43 @@ export function CreateInvoice() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
+              </div>
 
-              {/* Totals */}
               {items.length > 0 && (
-                <div className="mt-6 flex justify-end">
-                  <div className="w-full max-w-xs space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Sous-total HT:</span>
-                      <span className="font-medium">{subtotal.toFixed(2)} Fcfa</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">TAXE ({taxRate}%):</span>
-                      <span className="font-medium">{taxAmount.toFixed(2)} Fcfa</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-bold border-t pt-2">
-                      <span>Total TTC:</span>
-                      <span>{total.toFixed(2)} Fcfa</span>
-                    </div>
+                <div className="mt-6 max-w-xs ml-auto space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Sous-total</span>
+                    <span>{subtotal.toFixed(2)} Fcfa</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Taxe</span>
+                    <span>{taxAmount.toFixed(2)} Fcfa</span>
+                  </div>
+                  <div className="flex justify-between font-bold border-t pt-2">
+                    <span>Total</span>
+                    <span>{total.toFixed(2)} Fcfa</span>
                   </div>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Notes */}
+          {/* NOTES */}
           <Card>
             <CardHeader>
-              <CardTitle>Notes (optionnel)</CardTitle>
-              <CardDescription>Ajoutez des notes ou conditions de paiement</CardDescription>
+              <CardTitle>Notes</CardTitle>
             </CardHeader>
             <CardContent>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ex: Paiement sous 30 jours, conditions particulières..."
-                rows={4}
+                placeholder="Conditions, remarques…"
               />
             </CardContent>
           </Card>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-4">
+          {/* ACTIONS */}
+          <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>
               Annuler
             </Button>

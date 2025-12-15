@@ -23,7 +23,11 @@ interface CreateProductDialogProps {
   onSuccess: () => void
 }
 
-export function CreateProductDialog({ open, onOpenChange, onSuccess }: CreateProductDialogProps) {
+export function CreateProductDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CreateProductDialogProps) {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("")
@@ -32,9 +36,7 @@ export function CreateProductDialog({ open, onOpenChange, onSuccess }: CreatePro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (loading) return // empêche double clic
-    setLoading(true)
+    if (loading) return
 
     const parsedPrice = Number.parseFloat(price)
     if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
@@ -43,11 +45,12 @@ export function CreateProductDialog({ open, onOpenChange, onSuccess }: CreatePro
         description: "Veuillez entrer un prix numérique valide.",
         variant: "destructive",
       })
-      setLoading(false)
       return
     }
 
     try {
+      setLoading(true)
+
       const response = await productApi.create({
         name,
         description,
@@ -81,18 +84,20 @@ export function CreateProductDialog({ open, onOpenChange, onSuccess }: CreatePro
 
   return (
     <Dialog open={open} onOpenChange={loading ? () => {} : onOpenChange}>
-      <DialogContent>
+      <DialogContent className="w-full max-w-md">
+        {/* ===== HEADER ===== */}
         <DialogHeader>
-          <DialogTitle>Créer un nouveau produit</DialogTitle>
+          <DialogTitle>Nouveau produit</DialogTitle>
           <DialogDescription>
-            Ajoutez un produit ou service à votre catalogue.
+            Ajoutez un produit ou un service à votre catalogue.
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nom du produit/service</Label>
+        {/* ===== FORM ===== */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Nom du produit / service</Label>
               <Input
                 id="name"
                 value={name}
@@ -102,32 +107,35 @@ export function CreateProductDialog({ open, onOpenChange, onSuccess }: CreatePro
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="description">Description (optionnel)</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={loading}
+                className="resize-none"
+                rows={3}
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="price">Prix unitaire (Fcfa)</Label>
               <Input
                 id="price"
                 type="number"
+                min="0"
                 step="0.01"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
                 disabled={loading}
-                min="0"
               />
             </div>
           </div>
 
-          <DialogFooter>
+          {/* ===== FOOTER ===== */}
+          <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button
               type="button"
               variant="outline"
@@ -138,7 +146,7 @@ export function CreateProductDialog({ open, onOpenChange, onSuccess }: CreatePro
             </Button>
 
             <Button type="submit" disabled={loading}>
-              {loading ? "Création..." : "Créer"}
+              {loading ? "Création..." : "Créer le produit"}
             </Button>
           </DialogFooter>
         </form>
