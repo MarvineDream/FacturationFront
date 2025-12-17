@@ -1,78 +1,97 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
-import { authApi, type User } from "@/lib/api"
-import { useRouter } from "next/navigation"
+import type React from "react";
+import { createContext, useContext, useState, useEffect } from "react";
+import { authApi, type User } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 interface AuthContextType {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  logout: () => void
-  isAdmin: boolean
+  user: User | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => void;
+  isAdmin: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const checkAuth = async () => {
-      const token = localStorage.getItem("token")
-      if (token) {
-        const response = await authApi.getCurrentUser()
-        if (response.success && response.data) {
-          setUser(response.data)
-        } else {
-          localStorage.removeItem("token")
-        }
-      }
-      setLoading(false)
-    }
-
-    checkAuth()
-  }, [])
-
-  const login = async (email: string, password: string) => {
-    const response = await authApi.login(email, password)
-
-    if (response.success && response.data) {
-      localStorage.setItem("token", response.data.token)
-      setUser(response.data.user)
-
-      // Redirect based on role
-      if (response.data.user.role === "admin") {
-        router.push("/admin")
+  // 🔹 CHARGE L'UTILISATEUR VIA /me
+  const loadUser = async () => {
+    try {
+      const response = await authApi.getCurrentUser();
+      if (response.success && response.data) {
+        setUser(response.data);
       } else {
-        router.push("/dashboard")
+        setUser(null);
+        localStorage.removeItem("token");
       }
+    } catch {
+      setUser(null);
+      localStorage.removeItem("token");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      return { success: true }
+  // 🔹 AU MOUNT
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      loadUser();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  // 🔹 LOGIN PROPRE
+  const login = async (email: string, password: string) => {
+    const response = await authApi.login(email, password);
+
+    if (!response.success || !response.data) {
+      return { success: false, error: response.error };
     }
 
-    return { success: false, error: response.error }
-  }
+    localStorage.setItem("token", response.data.token);
+
+    // ⛔ NE PAS setUser ici
+    await loadUser(); // ✅ source unique
+
+    const role = response.data.user.role;
+    router.push(role === "admin" ? "/admin" : "/dashboard");
+
+    return { success: true };
+  };
 
   const logout = () => {
-    authApi.logout()
-    setUser(null)
-    router.push("/login")
-  }
+    authApi.logout();
+    setUser(null);
+    router.push("/login");
+  };
 
-  const isAdmin = user?.role === "admin"
-
-  return <AuthContext.Provider value={{ user, loading, login, logout, isAdmin }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        isAdmin: user?.role === "admin",
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

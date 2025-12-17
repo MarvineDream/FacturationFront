@@ -99,7 +99,7 @@ export function ProductManagement() {
         </CardHeader>
 
         <CardContent>
-          {/* ✅ CONTENEUR RESPONSIVE OBLIGATOIRE */}
+          {/* CONTENEUR RESPONSIVE OBLIGATOIRE */}
           <div className="overflow-x-auto">
             <Table className="min-w-[600px]">
               <TableHeader>
@@ -137,7 +137,7 @@ export function ProductManagement() {
                       </TableCell>
 
                       <TableCell className="text-right">
-                        {/* ✅ BOUTONS RESPONSIVE */}
+                        {/* BOUTONS RESPONSIVE */}
                         <div className="flex flex-col sm:flex-row justify-end gap-2">
                           <Button
                             variant="outline"

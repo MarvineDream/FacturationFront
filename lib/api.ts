@@ -214,6 +214,22 @@ export const invoiceApi = {
 }
 
 
+export const settingsApi = {
+  get: () => fetchApi("/settings"),
+
+  update: (data: {
+    taxRate: number
+    invoicePrefix: string
+    footerText: string
+  }) =>
+    fetchApi("/settings", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+}
+
+
+
 // Types
 export interface User {
   id: string

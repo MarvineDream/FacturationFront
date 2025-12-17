@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Card,
   CardContent,
@@ -13,18 +13,90 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { settingsApi } from "@/lib/api"
 
 export function Settings() {
   const [taxRate, setTaxRate] = useState("20")
   const [invoicePrefix, setInvoicePrefix] = useState("FAC")
   const [footerText, setFooterText] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [initialLoading, setInitialLoading] = useState(true)
+
   const { toast } = useToast()
 
-  const handleSave = () => {
-    toast({
-      title: "Succès",
-      description: "Paramètres enregistrés",
-    })
+  /* ===================== LOAD ===================== */
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await settingsApi.get()
+
+        if (res.success && res.data) {
+          setTaxRate(String(res.data.taxRate))
+          setInvoicePrefix(res.data.invoicePrefix)
+          setFooterText(res.data.footerText || "")
+        }
+      } catch {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les paramètres",
+          variant: "destructive",
+        })
+      } finally {
+        setInitialLoading(false)
+      }
+    }
+
+    loadSettings()
+  }, [toast])
+
+  /* ===================== SAVE ===================== */
+  const handleSave = async () => {
+    if (!invoicePrefix.trim()) {
+      toast({
+        title: "Erreur",
+        description: "Le préfixe de facture est obligatoire",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      setLoading(true)
+
+      const res = await settingsApi.update({
+        taxRate: Number(taxRate),
+        invoicePrefix: invoicePrefix.toUpperCase(),
+        footerText,
+      })
+
+      if (!res.success) {
+        throw new Error(res.error)
+      }
+
+      toast({
+        title: "Succès",
+        description: "Paramètres enregistrés avec succès",
+      })
+    } catch (err: any) {
+      toast({
+        title: "Erreur",
+        description:
+          err.message || "Impossible d'enregistrer les paramètres",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (initialLoading) {
+    return (
+      <Card>
+        <CardContent className="py-10 flex justify-center">
+          <div className="animate-spin h-8 w-8 border-b-2 border-primary rounded-full" />
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -38,7 +110,7 @@ export function Settings() {
         </CardHeader>
 
         <CardContent>
-          {/* ✅ GRID RESPONSIVE */}
+          {/* GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* TVA */}
             <div className="space-y-2">
@@ -53,13 +125,15 @@ export function Settings() {
               />
             </div>
 
-            {/* Préfixe facture */}
+            {/* Préfixe */}
             <div className="space-y-2">
               <Label htmlFor="invoicePrefix">Préfixe des factures</Label>
               <Input
                 id="invoicePrefix"
                 value={invoicePrefix}
-                onChange={(e) => setInvoicePrefix(e.target.value)}
+                onChange={(e) =>
+                  setInvoicePrefix(e.target.value.toUpperCase())
+                }
                 placeholder="FAC"
               />
               <p className="text-sm text-muted-foreground">
@@ -68,7 +142,7 @@ export function Settings() {
             </div>
           </div>
 
-          {/* Pied de page */}
+          {/* FOOTER */}
           <div className="space-y-2 mt-6">
             <Label htmlFor="footerText">Pied de page des factures</Label>
             <Textarea
@@ -80,13 +154,14 @@ export function Settings() {
             />
           </div>
 
-          {/* Bouton */}
+          {/* SAVE */}
           <div className="pt-6 flex justify-end">
             <Button
-              className="w-full sm:w-auto"
               onClick={handleSave}
+              disabled={loading}
+              className="w-full sm:w-auto"
             >
-              Enregistrer les paramètres
+              {loading ? "Enregistrement..." : "Enregistrer les paramètres"}
             </Button>
           </div>
         </CardContent>
