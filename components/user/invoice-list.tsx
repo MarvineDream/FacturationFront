@@ -12,6 +12,13 @@ import { useToast } from "@/hooks/use-toast"
 import { Download, Eye, Search, RefreshCcw } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+/* ===================== STATUS FR ===================== */
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Brouillon",
+  sent: "Envoyée",
+  paid: "Payée",
+}
+
 export function InvoiceList() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
@@ -100,12 +107,11 @@ export function InvoiceList() {
       setUpdatingStatusId(invoice.id)
 
       const res = await invoiceApi.updateStatus(invoice.id, nextStatus)
-
       if (!res.success) throw new Error()
 
       toast({
         title: "Statut mis à jour",
-        description: `Nouveau statut : ${nextStatus}`,
+        description: `Nouveau statut : ${STATUS_LABELS[nextStatus]}`,
       })
 
       loadInvoices()
@@ -141,7 +147,7 @@ export function InvoiceList() {
       escape(i.subtotal.toFixed(2)),
       escape(i.taxAmount.toFixed(2)),
       escape(i.total.toFixed(2)),
-      escape(i.status),
+      escape(STATUS_LABELS[i.status]),
     ])
 
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n")
@@ -197,7 +203,7 @@ export function InvoiceList() {
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="sm:w-[180px]">
-              <SelectValue />
+              <SelectValue placeholder="Statut" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous</SelectItem>
@@ -250,7 +256,7 @@ export function InvoiceList() {
                           : "outline"
                       }
                     >
-                      {invoice.status}
+                      {STATUS_LABELS[invoice.status]}
                     </Badge>
                   </TableCell>
 
@@ -286,8 +292,8 @@ export function InvoiceList() {
                         onClick={() => handleToggleStatus(invoice)}
                       >
                         {updatingStatusId === invoice.id
-                          ? "..."
-                          : "Changer statut"}
+                          ? "Mise à jour..."
+                          : "Changer le statut"}
                       </Button>
                     </div>
                   </TableCell>
