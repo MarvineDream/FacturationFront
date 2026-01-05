@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { invoiceApi, type Invoice } from "@/lib/api"
 import {
   Card,
@@ -20,12 +20,16 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { Download } from "lucide-react"
+import { Download, ChevronLeft, ChevronRight } from "lucide-react"
+
+const PAGE_SIZE = 10
 
 export function AllInvoices() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+
   const { toast } = useToast()
 
   useEffect(() => {
@@ -82,6 +86,16 @@ export function AllInvoices() {
     }
   }
 
+  /* ================= PAGINATION ================= */
+
+  const totalPages = Math.ceil(invoices.length / PAGE_SIZE)
+
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    const end = start + PAGE_SIZE
+    return invoices.slice(start, end)
+  }, [invoices, currentPage])
+
   if (loading) {
     return (
       <Card>
@@ -122,7 +136,7 @@ export function AllInvoices() {
             </TableHeader>
 
             <TableBody>
-              {invoices.length === 0 ? (
+              {paginatedInvoices.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={6}
@@ -132,13 +146,11 @@ export function AllInvoices() {
                   </TableCell>
                 </TableRow>
               ) : (
-                invoices.map((invoice) => {
+                paginatedInvoices.map((invoice) => {
                   const date = new Date(
                     invoice.issueDate
                   ).toLocaleDateString("fr-FR")
-                  const amount = Number(
-                    invoice.total || 0
-                  ).toFixed(2)
+                  const amount = Number(invoice.total || 0).toFixed(2)
 
                   return (
                     <TableRow key={invoice.id}>
@@ -154,9 +166,7 @@ export function AllInvoices() {
                         {date}
                       </TableCell>
 
-                      <TableCell>
-                        {amount} Fcfa
-                      </TableCell>
+                      <TableCell>{amount} FCFA</TableCell>
 
                       <TableCell>
                         <Badge
@@ -180,9 +190,7 @@ export function AllInvoices() {
                         <Button
                           variant="outline"
                           size="icon"
-                          disabled={
-                            downloadingId === invoice.id
-                          }
+                          disabled={downloadingId === invoice.id}
                           onClick={() =>
                             handleDownloadPdf(
                               invoice.id,
@@ -204,6 +212,37 @@ export function AllInvoices() {
             </TableBody>
           </Table>
         </div>
+
+        {/* ================= PAGINATION FOOTER ================= */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} sur {totalPages}
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Précédent
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Suivant
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

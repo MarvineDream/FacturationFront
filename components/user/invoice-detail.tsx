@@ -20,6 +20,8 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
   const [loading, setLoading] = useState(true)
   const { toast } = useToast()
   const router = useRouter()
+  const [settings, setSettings] = useState<any>(null)
+
 
   useEffect(() => {
     loadInvoice()
@@ -173,21 +175,6 @@ export function InvoiceDetail({ invoiceId }: InvoiceDetailProps) {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Informations générales</CardTitle>
-              <Badge
-                variant={
-                  invoice.status === "paid"
-                    ? "default"
-                    : invoice.status === "sent"
-                    ? "secondary"
-                    : "outline"
-                }
-              >
-                {invoice.status === "paid"
-                  ? "Payée"
-                  : invoice.status === "sent"
-                  ? "Envoyée"
-                  : "Brouillon"}
-              </Badge>
             </div>
           </CardHeader>
 

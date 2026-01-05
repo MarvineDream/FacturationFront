@@ -2,17 +2,45 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { invoiceApi, type Invoice } from "@/lib/api"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { Download, Eye, Search, RefreshCcw } from "lucide-react"
+import {
+  Download,
+  Eye,
+  Search,
+  RefreshCcw,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 
-/* ===================== STATUS FR ===================== */
+/* ===================== CONFIG ===================== */
+const PAGE_SIZE = 10
+
 const STATUS_LABELS: Record<string, string> = {
   draft: "Brouillon",
   sent: "Envoyée",
@@ -22,9 +50,11 @@ const STATUS_LABELS: Record<string, string> = {
 export function InvoiceList() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
+
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
+  const [currentPage, setCurrentPage] = useState(1)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null)
 
@@ -54,10 +84,16 @@ export function InvoiceList() {
 
   /* ===================== FILTER ===================== */
   const filteredInvoices = useMemo(() => {
+    setCurrentPage(1) // 🔥 reset page quand on filtre
+
     return invoices.filter((invoice) => {
       const matchesSearch =
-        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.client?.name.toLowerCase().includes(searchTerm.toLowerCase())
+        invoice.invoiceNumber
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        invoice.client?.name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase())
 
       const matchesStatus =
         statusFilter === "all" || invoice.status === statusFilter
@@ -65,6 +101,14 @@ export function InvoiceList() {
       return matchesSearch && matchesStatus
     })
   }, [invoices, searchTerm, statusFilter])
+
+  /* ===================== PAGINATION ===================== */
+  const totalPages = Math.ceil(filteredInvoices.length / PAGE_SIZE)
+
+  const paginatedInvoices = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return filteredInvoices.slice(start, start + PAGE_SIZE)
+  }, [filteredInvoices, currentPage])
 
   /* ===================== PDF ===================== */
   const handleDownloadPdf = async (invoice: Invoice) => {
@@ -105,7 +149,6 @@ export function InvoiceList() {
 
     try {
       setUpdatingStatusId(invoice.id)
-
       const res = await invoiceApi.updateStatus(invoice.id, nextStatus)
       if (!res.success) throw new Error()
 
@@ -130,16 +173,6 @@ export function InvoiceList() {
   const exportToCSV = () => {
     const escape = (v: any) => `"${String(v).replace(/"/g, '""')}"`
 
-    const headers = [
-      "Numéro",
-      "Client",
-      "Date",
-      "HT",
-      "TVA",
-      "TTC",
-      "Statut",
-    ]
-
     const rows = filteredInvoices.map((i) => [
       escape(i.invoiceNumber),
       escape(i.client?.name || ""),
@@ -150,7 +183,12 @@ export function InvoiceList() {
       escape(STATUS_LABELS[i.status]),
     ])
 
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n")
+    const csv = [
+      ["Numéro", "Client", "Date", "HT", "TVA", "TTC", "Statut"],
+      ...rows,
+    ]
+      .map((r) => r.join(","))
+      .join("\n")
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
     const url = URL.createObjectURL(blob)
@@ -177,7 +215,7 @@ export function InvoiceList() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row justify-between gap-3">
           <div>
             <CardTitle>Mes factures</CardTitle>
             <CardDescription>Historique de facturation</CardDescription>
@@ -189,7 +227,7 @@ export function InvoiceList() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Filters */}
+        {/* ================= FILTERS ================= */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -214,7 +252,7 @@ export function InvoiceList() {
           </Select>
         </div>
 
-        {/* Table */}
+        {/* ================= TABLE ================= */}
         <Table>
           <TableHeader>
             <TableRow>
@@ -228,14 +266,14 @@ export function InvoiceList() {
           </TableHeader>
 
           <TableBody>
-            {filteredInvoices.length === 0 ? (
+            {paginatedInvoices.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Aucune facture trouvée
                 </TableCell>
               </TableRow>
             ) : (
-              filteredInvoices.map((invoice) => (
+              paginatedInvoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">
                     {invoice.invoiceNumber}
@@ -244,7 +282,7 @@ export function InvoiceList() {
                   <TableCell>
                     {new Date(invoice.issueDate).toLocaleDateString("fr-FR")}
                   </TableCell>
-                  <TableCell>{invoice.total.toFixed(2)} Fcfa</TableCell>
+                  <TableCell>{invoice.total.toFixed(2)} FCFA</TableCell>
 
                   <TableCell>
                     <Badge
@@ -291,9 +329,7 @@ export function InvoiceList() {
                         disabled={updatingStatusId === invoice.id}
                         onClick={() => handleToggleStatus(invoice)}
                       >
-                        {updatingStatusId === invoice.id
-                          ? "Mise à jour..."
-                          : "Changer le statut"}
+                        Changer le statut
                       </Button>
                     </div>
                   </TableCell>
@@ -302,6 +338,37 @@ export function InvoiceList() {
             )}
           </TableBody>
         </Table>
+
+        {/* ================= PAGINATION ================= */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between pt-2">
+            <span className="text-sm text-muted-foreground">
+              Page {currentPage} sur {totalPages}
+            </span>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Précédent
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Suivant
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

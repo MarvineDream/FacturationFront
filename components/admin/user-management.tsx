@@ -29,18 +29,32 @@ export function UserManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const { toast } = useToast()
 
+  // ================== ONLINE / OFFLINE ==================
+  const isOnline = (lastSeenAt?: string) => {
+    if (!lastSeenAt) return false
+
+    const FIVE_MINUTES = 5 * 60 * 1000
+    const lastSeen = new Date(lastSeenAt).getTime()
+
+    return Date.now() - lastSeen < FIVE_MINUTES
+  }
+
+  // ================== LOAD USERS ==================
   const loadUsers = async () => {
     setLoading(true)
     const response = await userApi.getAll()
+
     if (response.success && response.data) {
       setUsers(response.data)
     } else {
       toast({
         title: "Erreur",
-        description: response.error || "Impossible de charger les utilisateurs",
+        description:
+          response.error || "Impossible de charger les utilisateurs",
         variant: "destructive",
       })
     }
+
     setLoading(false)
   }
 
@@ -48,8 +62,10 @@ export function UserManagement() {
     loadUsers()
   }, [])
 
+  // ================== ACTIONS ==================
   const handleToggleStatus = async (userId: string) => {
     const response = await userApi.toggleStatus(userId)
+
     if (response.success) {
       toast({
         title: "Succès",
@@ -59,16 +75,19 @@ export function UserManagement() {
     } else {
       toast({
         title: "Erreur",
-        description: response.error || "Impossible de modifier le statut",
+        description:
+          response.error || "Impossible de modifier le statut",
         variant: "destructive",
       })
     }
   }
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) return
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?"))
+      return
 
     const response = await userApi.delete(userId)
+
     if (response.success) {
       toast({
         title: "Succès",
@@ -78,12 +97,14 @@ export function UserManagement() {
     } else {
       toast({
         title: "Erreur",
-        description: response.error || "Impossible de supprimer l'utilisateur",
+        description:
+          response.error || "Impossible de supprimer l'utilisateur",
         variant: "destructive",
       })
     }
   }
 
+  // ================== LOADING ==================
   if (loading) {
     return (
       <Card>
@@ -94,6 +115,7 @@ export function UserManagement() {
     )
   }
 
+  // ================== RENDER ==================
   return (
     <>
       <Card>
@@ -123,13 +145,14 @@ export function UserManagement() {
         {/* ================= TABLE ================= */}
         <CardContent>
           <div className="overflow-x-auto">
-            <Table className="min-w-[900px]">
+            <Table className="min-w-[1000px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Rôle</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Présence</TableHead>
                   <TableHead className="hidden md:table-cell">
                     Date de création
                   </TableHead>
@@ -142,14 +165,15 @@ export function UserManagement() {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.id}>
+                    {/* NOM */}
                     <TableCell className="font-medium">
                       {user.name}
                     </TableCell>
 
-                    <TableCell>
-                      {user.email}
-                    </TableCell>
+                    {/* EMAIL */}
+                    <TableCell>{user.email}</TableCell>
 
+                    {/* ROLE */}
                     <TableCell>
                       <Badge
                         variant={
@@ -164,6 +188,7 @@ export function UserManagement() {
                       </Badge>
                     </TableCell>
 
+                    {/* STATUT */}
                     <TableCell>
                       <Badge
                         variant={
@@ -178,10 +203,27 @@ export function UserManagement() {
                       </Badge>
                     </TableCell>
 
-                    <TableCell className="hidden md:table-cell">
-                      {new Date(user.createdAt).toLocaleDateString("fr-FR")}
+                    {/* PRESENCE */}
+                    <TableCell>
+                      {isOnline(user.lastSeenAt) ? (
+                        <Badge className="bg-green-600 hover:bg-green-600">
+                          En ligne
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          Hors ligne
+                        </Badge>
+                      )}
                     </TableCell>
 
+                    {/* CREATED AT */}
+                    <TableCell className="hidden md:table-cell">
+                      {new Date(
+                        user.createdAt
+                      ).toLocaleDateString("fr-FR")}
+                    </TableCell>
+
+                    {/* ACTIONS */}
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
@@ -213,6 +255,7 @@ export function UserManagement() {
         </CardContent>
       </Card>
 
+      {/* ================= CREATE USER ================= */}
       <CreateUserDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}

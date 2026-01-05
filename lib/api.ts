@@ -238,7 +238,10 @@ export interface User {
   role: "admin" | "user"
   isActive: boolean
   createdAt: string
+  lastSeenAt?: string
+
 }
+
 
 export interface Client {
   id: string

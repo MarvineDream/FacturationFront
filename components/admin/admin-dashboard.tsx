@@ -2,10 +2,12 @@
 
 import Image from "next/image"
 import { useState } from "react"
+import { BarChart } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UserManagement } from "./user-management"
+import { AdminAnalytics } from "./adminAnalytics";
 import { AllInvoices } from "./all-invoices"
 import { Settings } from "./settings"
 import { FileText, Users, SettingsIcon, LogOut } from "lucide-react"
@@ -66,7 +68,12 @@ export function AdminDashboard() {
           onValueChange={setActiveTab}
           className="space-y-6"
         >
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-md grid-cols-4">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <BarChart className="h-4 w-4" />
+              Données
+            </TabsTrigger>
+            
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Utilisateurs
@@ -94,6 +101,11 @@ export function AdminDashboard() {
           <TabsContent value="settings">
             <Settings />
           </TabsContent>
+          
+          <TabsContent value="analytics">
+            <AdminAnalytics />
+          </TabsContent>
+
         </Tabs>
       </main>
     </div>
