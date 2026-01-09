@@ -1,6 +1,6 @@
 // API configuration and helper functions for connecting to Express backend
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://facturationback.onrender.com"
 
 interface ApiResponse<T = any> {
   success: boolean
