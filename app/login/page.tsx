@@ -36,7 +36,7 @@ export default function LoginPage() {
     }
   }
 
-  // 🎄 Chapeau visible uniquement en décembre
+  // Chapeau visible uniquement en décembre
   const isChristmas = new Date().getMonth() === 11
 
   return (
@@ -54,6 +54,7 @@ export default function LoginPage() {
                 alt="Bamboo Assur Logo"
                 width={150}
                 height={50}
+                className="h-auto"
                 priority
               />
 
